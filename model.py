@@ -2,11 +2,10 @@ from datetime import date
 from dataclasses import dataclass
 from typing import Optional
 
-
 @dataclass(frozen=True)
 class OrderLine:
     """
-    Dataclass to represent an order line requested by a customer
+    Value object to represent an order line requested by a customer
 
     Notes.
         1. Customers place orders
@@ -25,7 +24,8 @@ class Batch:
 
         Notes.
             1. The purchasing department orders small batches of stock
-            2. A batch of stock has a unique IDE called a reference, a SKU, and a quantity
+            2. A batch of stock has a unique ID called a reference, a SKU, and a quantity
+            3. Customers can allocate an order line to buy items from this batch
         """
         self.reference = ref
         self.sku = sku
@@ -33,7 +33,7 @@ class Batch:
         self.available_quantity = qty
 
     def allocate(self, line: OrderLine):
-        """
-        Allocate an order line to this batch
-        """
         self.available_quantity -= line.qty
+
+    def can_allocate(self, line: OrderLine):
+        return line.qty <= self.available_quantity
