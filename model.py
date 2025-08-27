@@ -1,6 +1,7 @@
 from datetime import date
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
+
 
 @dataclass(frozen=True)
 class OrderLine:
@@ -12,6 +13,7 @@ class OrderLine:
         2. An order is identified by an order reference and comprises multiple
         order lines where each line has a SKU (stock-keeping unit) and a quantity.
     """
+
     orderid: str
     sku: str
     qty: int
@@ -32,8 +34,25 @@ class Batch:
         self.eta = eta
         self.available_quantity = qty
 
+    def __gt__(self, other):
+        if self.eta is None:
+            return False
+        if other.eta is None:
+            return True
+        return self.eta > other.eta
+
     def allocate(self, line: OrderLine):
         self.available_quantity -= line.qty
 
     def can_allocate(self, line: OrderLine):
         return line.qty <= self.available_quantity
+
+
+# Domain Service Function
+def allocate(line: OrderLine, batches: List[Batch]) -> str:
+    """
+    Allocate an order line against a specific set of batches
+    """
+    batch = next(b for b in sorted(batches) if b.can_allocate(line))
+    batch.allocate(line)
+    return batch.reference
