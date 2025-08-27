@@ -62,16 +62,24 @@ def test_prefers_earlier_batches():
 	
 	assert earliest.available_quantity == 90
 
-def test_order_lines_equality():
+def test_checks_order_lines_equality():
 	line1 = OrderLine("order-123", "SMALL-TABLE", 2)
 	line2 = OrderLine("order-231", "SMALL-TABLE", 2)
 
 	assert line1 is not line2
 
 
-def test_batch_identity_equality():
+def test_checks_batch_identity_equality():
 	b1 = Batch("batch-001", "SMALL-CHAIR", 2, "2025-04-25")
 	b2 = b1
 	b2.allocate(OrderLine("order-123", "SMALL-CHAIR", 1))
 
 	assert b2 is b1 and b1 is b2
+
+def test_raises_out_of_stock_exception_if_cannot_allocate():
+	sku = "SMALL-FORK"
+	small_batch, full_line = make_batch_and_line(sku, 10, 10)
+	allocate(full_line, [small_batch])
+
+	with pytest.raises(Exception, match=sku):
+		allocate(OrderLine("order-123", sku, 1), [small_batch])
