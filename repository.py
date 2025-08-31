@@ -18,11 +18,53 @@ class SqlRepository(AbstractRepository):
     def __init__(self, session):
         self.session = session
 
+    def __insert_if_not_exists(self, table: str, data: dict):
+        data_sanitized = {k: v for k, v in data.items() if v is not None}
+
+        cols = ", ".join(data_sanitized.keys())
+        placeholders = ", ".join([f":{k}" for k in data_sanitized.keys()])
+        where_clause = " AND ".join([f"{k} = :{k}" for k in data_sanitized.keys()])
+
+        self.session.execute(
+            text(
+                f"""
+                INSERT INTO {table} ({cols})
+                SELECT {placeholders}
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM {table} WHERE {where_clause}
+                )
+                """
+            ),
+            data_sanitized,
+        )
+
+        row = self.session.execute(
+            text(f"SELECT id FROM {table} WHERE {where_clause}"), data_sanitized
+        ).fetchone()
+
+        return row.id if row else None
+
     def add(self, batch):
-        # Insert batch if it does not exist
-        # Get lines IDs on _allocations
-        # Insert tuple (batch_id, order_id) on allocations only if it does not exist
-        ...
+        batch_id = self.__insert_if_not_exists(
+            "batches",
+            {
+                "reference": batch.reference,
+                "sku": batch.sku,
+                "_purchased_quantity": batch._purchased_quantity,
+                "eta": batch.eta,
+            },
+        )
+        orderline_ids = [
+            self.__insert_if_not_exists(
+                "order_lines",
+                {"sku": line.sku, "qty": line.qty, "orderid": line.orderid},
+            )
+            for line in batch._allocations
+        ]
+        for orderline_id in orderline_ids:
+            self.__insert_if_not_exists(
+                "allocations", {"batch_id": batch_id, "orderline_id": orderline_id}
+            )
 
     def get(self, reference) -> model.Batch:
         [[reference, sku, _purchased_quantity, eta]] = self.session.execute(
