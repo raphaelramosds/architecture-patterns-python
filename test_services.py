@@ -14,6 +14,17 @@ class FakeRepository(repository.AbstractRepository):
     def get(self, reference):
         return next(b for b in self._batches if b.reference == reference)
 
+    def get_line(self, orderid):
+        return next(
+            (
+                line
+                for b in self._batches
+                for line in b._allocations
+                if line.orderid == orderid
+            ),
+            None,
+        )
+
     def list(self):
         return list(self._batches)
 
@@ -55,20 +66,18 @@ def test_commits():
 
 def test_deallocate_decrements_available_quantity():
     repo, session = FakeRepository([]), FakeSession()
-    # TODO: you'll need to implement the services.add_batch method
-    services.add_batch("b1", "BLUE-PLINTH", 100, None, repo, session)
+    services.add_batch(
+        batch=model.Batch("b1", "BLUE-PLINTH", 100, None), repo=repo, session=session
+    )
     line = model.OrderLine("o1", "BLUE-PLINTH", 10)
     services.allocate(line, repo, session)
     batch = repo.get(reference="b1")
     assert batch.available_quantity == 90
-    # services.deallocate(...
-    ...
+    services.deallocate(line.orderid, line.sku, repo, session)
     assert batch.available_quantity == 100
 
 
-def test_deallocate_decrements_correct_quantity():
-    ...  #  TODO - check that we decrement the right sku
+def test_deallocate_decrements_correct_quantity(): ...  #  TODO - check that we decrement the right sku
 
 
-def test_trying_to_deallocate_unallocated_batch():
-    ...  #  TODO: should this error or pass silently? up to you.
+def test_trying_to_deallocate_unallocated_batch(): ...  #  TODO: should this error or pass silently? up to you.
