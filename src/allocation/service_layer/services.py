@@ -17,11 +17,9 @@ def is_valid_sku(sku, batches):
 
 def add_batch(
         ref: str, sku: str, qty: int, eta: Optional[date],
-        uow  #: unit_of_work.AbstractUnitOfWork
-        # this argument could be start_uow: AbstractUnitOfWorkStarter instead?
+        start_uow: unit_of_work.AbstractUnitOfWorkStarter
 ):
-    # and this could be with start_uow() as uow:
-    with uow:
+    with start_uow as uow:
         uow.batches.add(model.Batch(ref, sku, qty, eta))
         uow.commit()
 

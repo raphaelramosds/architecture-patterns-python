@@ -10,7 +10,6 @@ from allocation import config
 from allocation.adapters import repository
 
 
-
 class AbstractUnitOfWork(abc.ABC):
     # should this class contain __enter__ and __exit__?
     # or should the context manager and the UoW be separate?
@@ -25,14 +24,15 @@ class AbstractUnitOfWork(abc.ABC):
         raise NotImplementedError
 
 
+DEFAULT_SESSION_FACTORY = sessionmaker(
+    bind=create_engine(
+        config.get_postgres_uri(),
+    )
+)
 
-DEFAULT_SESSION_FACTORY = sessionmaker(bind=create_engine(
-    config.get_postgres_uri(),
-))
 
+class SqlAlchemyUnitOfWork: ...
 
-class SqlAlchemyUnitOfWork:
-    ...
 
 # One alternative would be to define a `start_uow` function,
 # or a UnitOfWorkStarter or UnitOfWorkManager that does the
@@ -41,3 +41,6 @@ class SqlAlchemyUnitOfWork:
 #
 # A type like this could work?
 # AbstractUnitOfWorkStarter = ContextManager[AbstractUnitOfWork]
+
+
+class AbstractUnitOfWorkStarter(ContextManager): ...

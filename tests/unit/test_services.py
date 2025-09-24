@@ -19,19 +19,37 @@ class FakeRepository(repository.AbstractRepository):
 
 
 class FakeUnitOfWork(unit_of_work.AbstractUnitOfWork):
-    ...
 
+    batches: FakeRepository
+
+    def commit(self):
+        self.committed = True
+
+    def rollback(self): ...
+
+
+class FakeUoWContextManager(unit_of_work.AbstractUnitOfWorkStarter):
+    def __init__(self, uow: FakeUnitOfWork):
+        uow.batches = FakeRepository([])
+        self.uow = uow
+
+    def __enter__(self):
+        self.uow.committed = False
+        return self.uow
+
+    def __exit__(self, *args):
+        self.uow.commit()
 
 
 def test_add_batch():
     uow = FakeUnitOfWork()
-    # fake_uow_starter = FakeUoWContextManager(uow) ?
-    # fake_uow_starter = contextlib.nullcontext(uow) ?
-    # services.add_batch("b1", "CRUNCHY-ARMCHAIR", 100, None, fake_uow_starter)
+    fake_uow_starter = FakeUoWContextManager(uow)
+    services.add_batch("b1", "CRUNCHY-ARMCHAIR", 100, None, fake_uow_starter)
     assert uow.batches.get("b1") is not None
     assert uow.committed
 
-@pytest.mark.skip('unskip and fix when ready')
+
+@pytest.mark.skip("unskip and fix when ready")
 def test_allocate_returns_allocation():
     uow = FakeUnitOfWork()
     services.add_batch("batch1", "COMPLICATED-LAMP", 100, None, uow)
@@ -39,7 +57,7 @@ def test_allocate_returns_allocation():
     assert result == "batch1"
 
 
-@pytest.mark.skip('unskip and fix when ready')
+@pytest.mark.skip("unskip and fix when ready")
 def test_allocate_errors_for_invalid_sku():
     uow = FakeUnitOfWork()
     services.add_batch("b1", "AREALSKU", 100, None, uow)
@@ -48,7 +66,7 @@ def test_allocate_errors_for_invalid_sku():
         services.allocate("o1", "NONEXISTENTSKU", 10, uow)
 
 
-@pytest.mark.skip('unskip and fix when ready')
+@pytest.mark.skip("unskip and fix when ready")
 def test_allocate_commits():
     uow = FakeUnitOfWork()
     services.add_batch("b1", "OMINOUS-MIRROR", 100, None, uow)
