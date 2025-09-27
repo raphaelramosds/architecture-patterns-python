@@ -21,8 +21,8 @@ class SqlAlchemyRepository(AbstractRepository):
     def add(self, batch):
         self.session.add(batch)
 
-    def get(self, reference):
-        return self.session.query(model.Batch).filter_by(reference=reference).one()
+    def get(self, sku):
+        return self.session.query(model.Batch).filter_by(sku=sku).one()
 
     def list(self):
         return self.session.query(model.Batch).all()

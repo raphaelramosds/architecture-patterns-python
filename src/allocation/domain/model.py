@@ -19,13 +19,12 @@ def allocate(line: OrderLine, batches: List[Batch]) -> str:
         raise OutOfStock(f'Out of stock for sku {line.sku}')
 
 class Product:
-    ''' dummy implementation, fixme'''
+    def __init__(self, sku: str, batches: List[Batch]):
+        self.sku = sku
+        self.batches = batches
 
-    def __init__(self, *args, **kwargs):
-        self.batches = kwargs.get('batches')
-
-    def allocate(self, line):
-        return allocate(line,  self.batches)
+    def allocate(self, line: OrderLine):
+        return allocate(line, self.batches)
 
 
 @dataclass(unsafe_hash=True)
